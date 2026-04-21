@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react"; // Import `use` from React
-import API_URL from "@/lib/api";
+import {API_URL} from "@/lib/api";
 import { getToken } from "@/lib/auth";
 
 // Correctly type params as a Promise
@@ -82,6 +82,7 @@ export default function CourseDetailsPage({ params }: Props) {
       <div className="bg-white rounded-xl shadow p-6 mb-8">
         <h1 className="text-4xl font-bold text-blue-600 mb-3">{course.title}</h1>
         <p className="text-gray-600 mb-5">{course.description}</p>
+        <p className="text-lg font-semibold">Course ID: {course.id}</p>
         <button
           onClick={handleEnroll}
           className="bg-green-600 text-white px-5 py-2 rounded"

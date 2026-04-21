@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import API_URL from "@/lib/api";
+import {API_URL} from "@/lib/api";
 import { getToken } from "@/lib/auth";
 
 export default function UploadLessonPage() {

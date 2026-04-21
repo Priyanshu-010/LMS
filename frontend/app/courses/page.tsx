@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import API_URL from "@/lib/api";
+import {API_URL} from "@/lib/api";
 import CourseCard from "@/components/CourseCard";
 
 type Course = {

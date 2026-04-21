@@ -6,7 +6,10 @@ from app.core.database import get_db
 from app.models.course import Course
 from app.models.user import User
 from app.schemas.course import CourseCreate, CourseUpdate
-from app.utils.dependencies import require_role
+from app.utils.dependencies import (
+    get_current_user,
+    require_role
+)
 
 router = APIRouter(
     prefix="/courses",
@@ -67,6 +70,23 @@ def get_courses(
 
     return result
 
+@router.get("/my-created")
+def get_my_created_courses(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(["teacher", "admin"]))
+):
+    # Filter courses by the teacher_id of the logged-in user
+    courses = db.query(Course).filter(Course.teacher_id == current_user.id).all()
+    
+    result = []
+    for course in courses:
+        result.append({
+            "id": course.id,
+            "title": course.title,
+            "description": course.description,
+            "teacher_id": course.teacher_id
+        })
+    return result
 
 @router.get("/{course_id}")
 def get_single_course(
@@ -160,3 +180,13 @@ def delete_course(
     db.commit()
 
     return {"message": "Course deleted"}
+
+@router.get("/my-created")
+def get_my_created_courses(
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    if current_user.role not in ["teacher", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    return db.query(Course).filter(Course.instructor_id == current_user.id).all()

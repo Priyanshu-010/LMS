@@ -1,5 +1,6 @@
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata = {
   title: "LMS App",
@@ -14,10 +15,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-gray-100 text-gray-900">
-        <Navbar />
-        <main className="max-w-6xl mx-auto px-6 py-8">
-          {children}
-        </main>
+        <AuthProvider>
+          <Navbar />
+          <main className="max-w-6xl mx-auto px-6 py-8">
+            {children}
+          </main>
+        </AuthProvider>
       </body>
     </html>
   );
