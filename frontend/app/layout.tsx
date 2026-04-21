@@ -14,10 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-gray-100 text-gray-900">
+      <body className="bg-[#09090b] text-zinc-100 min-h-screen">
         <AuthProvider>
           <Navbar />
-          <main className="max-w-6xl mx-auto px-6 py-8">
+          <main className="max-w-6xl mx-auto px-6 py-12">
             {children}
           </main>
         </AuthProvider>
