@@ -49,3 +49,56 @@ venv
 .env
 
 uploads
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python bytecode
+__pycache__/
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.pyc
+*$py.class
+
+# Logs and databases
+*.log
+*.sqlite3
+*.db
+
+# Environment variables
+.env
+.env.local
+.env.production
+*.secret
+
+# Testing
+.coverage
+.htmlcov/
+.coverage*
+.hypothesis/
+.pytest_cache/
+
+# IDE and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build and distribution
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Dependency management
+pip-log.txt
+pip-delete-this-directory.txt
+.eggs/
+
+# OS files
+.DS_Store
+Thumbs.db   

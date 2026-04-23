@@ -5,10 +5,7 @@ from app.core.database import get_db
 from app.models.enrollment import Enrollment
 from app.models.course import Course
 from app.models.user import User
-from app.utils.dependencies import (
-    get_current_user,
-    require_role
-)
+from app.utils.dependencies import get_current_user, require_role
 
 router = APIRouter(
     prefix="/enrollments",
@@ -16,23 +13,17 @@ router = APIRouter(
 )
 
 
+# Student enrolls in a course
 @router.post("/{course_id}")
-def enroll_course(
+def enroll(
     course_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(
-        require_role(["student"])
-    )
+    current_user: User = Depends(require_role(["student"]))
 ):
-    course = db.query(Course).filter(
-        Course.id == course_id
-    ).first()
+    course = db.query(Course).filter(Course.id == course_id).first()
 
     if not course:
-        raise HTTPException(
-            status_code=404,
-            detail="Course not found"
-        )
+        raise HTTPException(status_code=404, detail="Course not found")
 
     existing = db.query(Enrollment).filter(
         Enrollment.student_id == current_user.id,
@@ -42,7 +33,7 @@ def enroll_course(
     if existing:
         raise HTTPException(
             status_code=400,
-            detail="Already enrolled"
+            detail="Already enrolled in this course"
         )
 
     enrollment = Enrollment(
@@ -53,38 +44,75 @@ def enroll_course(
     db.add(enrollment)
     db.commit()
 
-    return {
-        "message": "Enrolled successfully"
-    }
+    return {"message": f"Enrolled in '{course.title}' successfully"}
 
 
-@router.get("/my-courses")
-def my_courses(
+# Student unenrolls from a course
+@router.delete("/{course_id}")
+def unenroll(
+    course_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(
-        require_role(["student"])
-    )
+    current_user: User = Depends(require_role(["student"]))
+):
+    enrollment = db.query(Enrollment).filter(
+        Enrollment.student_id == current_user.id,
+        Enrollment.course_id == course_id
+    ).first()
+
+    if not enrollment:
+        raise HTTPException(
+            status_code=404,
+            detail="You are not enrolled in this course"
+        )
+
+    db.delete(enrollment)
+    db.commit()
+
+    return {"message": "Unenrolled successfully"}
+
+
+# Student gets their enrolled courses
+@router.get("/my")
+def get_my_enrollments(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(["student"]))
 ):
     enrollments = db.query(Enrollment).filter(
         Enrollment.student_id == current_user.id
     ).all()
 
-    course_ids = [e.course_id for e in enrollments]
+    result = []
+    for enr in enrollments:
+        course = db.query(Course).filter(
+            Course.id == enr.course_id
+        ).first()
 
-    courses = db.query(Course).filter(
-        Course.id.in_(course_ids)
-    ).all()
+        teacher = db.query(User).filter(
+            User.id == course.teacher_id
+        ).first() if course else None
 
-    return courses
+        result.append({
+            "enrollment_id": enr.id,
+            "course_id": enr.course_id,
+            "course_title": course.title if course else None,
+            "teacher_name": teacher.name if teacher else None,
+            "progress": enr.progress,
+            "enrolled_at": enr.enrolled_at
+        })
+
+    return result
 
 
-@router.get("/")
-def all_enrollments(
+# Check if student is enrolled in a specific course
+@router.get("/check/{course_id}")
+def check_enrollment(
+    course_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(
-        require_role(["admin"])
-    )
+    current_user: User = Depends(get_current_user)
 ):
-    enrollments = db.query(Enrollment).all()
+    enrollment = db.query(Enrollment).filter(
+        Enrollment.student_id == current_user.id,
+        Enrollment.course_id == course_id
+    ).first()
 
-    return enrollments
+    return {"enrolled": enrollment is not None}

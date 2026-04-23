@@ -3,6 +3,8 @@ uvicorn
 sqlalchemy
 psycopg2-binary
 python-dotenv
-bcrypt==4.0.1   
+bcrypt==4.0.1
 python-jose
 email-validator
+python-multipart
+cloudinary

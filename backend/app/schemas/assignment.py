@@ -3,28 +3,23 @@ from typing import Optional
 from datetime import datetime
 
 
-class LessonCreate(BaseModel):
+class AssignmentCreate(BaseModel):
     title: str
     description: Optional[str] = None
-    order: Optional[int] = 0
-    external_video_link: Optional[str] = None
+    due_date: Optional[datetime] = None
 
 
-class LessonUpdate(BaseModel):
+class AssignmentUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
-    order: Optional[int] = None
-    external_video_link: Optional[str] = None
+    due_date: Optional[datetime] = None
 
 
-class LessonOut(BaseModel):
+class AssignmentOut(BaseModel):
     id: int
     title: str
     description: Optional[str] = None
-    order: int
-    video_url: Optional[str] = None
-    pdf_url: Optional[str] = None
-    external_video_link: Optional[str] = None
+    due_date: Optional[datetime] = None
     course_id: int
     created_at: datetime
 

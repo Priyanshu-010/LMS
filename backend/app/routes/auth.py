@@ -1,117 +1,73 @@
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from jose import jwt, JWTError
 
 from app.core.database import get_db
-from app.core.security import (
-    hash_password,
-    verify_password,
-    create_access_token
-)
-from app.core.config import SECRET_KEY, ALGORITHM
+from app.core.security import hash_password, verify_password, create_access_token
 from app.models.user import User
-from app.schemas.auth import RegisterSchema, LoginSchema
+from app.schemas.auth import RegisterSchema, LoginSchema, TokenResponse
 
 router = APIRouter(
     prefix="/auth",
-    tags=["Authentication"]
+    tags=["Auth"]
 )
 
 
-@router.post("/register")
+@router.post("/register", response_model=TokenResponse)
 def register(data: RegisterSchema, db: Session = Depends(get_db)):
-    existing_user = db.query(User).filter(
+    existing = db.query(User).filter(
         User.email == data.email
     ).first()
 
-    if existing_user:
+    if existing:
         raise HTTPException(
             status_code=400,
-            detail="Email already exists"
+            detail="Email already registered"
         )
 
-    new_user = User(
+    user = User(
         name=data.name,
         email=data.email,
-        password=hash_password(data.password),
-        role="student"
+        hashed_password=hash_password(data.password),
+        role="student"  # everyone starts as student
     )
 
-    db.add(new_user)
+    db.add(user)
     db.commit()
-    db.refresh(new_user)
+    db.refresh(user)
 
-    return {
-        "message": "User registered successfully"
-    }
+    token = create_access_token({"sub": str(user.id)})
+
+    return TokenResponse(
+        access_token=token,
+        role=user.role,
+        user_id=user.id,
+        name=user.name
+    )
 
 
-@router.post("/login")
+@router.post("/login", response_model=TokenResponse)
 def login(data: LoginSchema, db: Session = Depends(get_db)):
     user = db.query(User).filter(
         User.email == data.email
     ).first()
 
-    if not user:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid credentials"
-        )
-
-    if not verify_password(
-        data.password,
-        user.password
-    ):
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid credentials"
-        )
-
-    token = create_access_token(
-        {"sub": str(user.id)}
-    )
-
-    return {
-        "access_token": token,
-        "token_type": "bearer"
-    }
-
-
-@router.get("/me")
-def me(
-    authorization: str = Header(...),
-    db: Session = Depends(get_db)
-):
-    try:
-        token = authorization.replace("Bearer ", "")
-
-        payload = jwt.decode(
-            token,
-            SECRET_KEY,
-            algorithms=[ALGORITHM]
-        )
-
-        user_id = int(payload.get("sub"))
-
-    except JWTError:
+    if not user or not verify_password(data.password, user.hashed_password):
         raise HTTPException(
             status_code=401,
-            detail="Invalid token"
+            detail="Invalid email or password"
         )
 
-    user = db.query(User).filter(
-        User.id == user_id
-    ).first()
-
-    if not user:
+    if not user.is_active:
         raise HTTPException(
-            status_code=404,
-            detail="User not found"
+            status_code=403,
+            detail="Account is deactivated"
         )
 
-    return {
-        "id": user.id,
-        "name": user.name,
-        "email": user.email,
-        "role": user.role
-    }
+    token = create_access_token({"sub": str(user.id)})
+
+    return TokenResponse(
+        access_token=token,
+        role=user.role,
+        user_id=user.id,
+        name=user.name
+    )
