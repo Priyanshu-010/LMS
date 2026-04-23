@@ -46,3 +46,6 @@ next-env.d.ts
 env
 venv
 .venv\local
+.env
+
+uploads
