@@ -1,84 +1,90 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { API_URL } from "@/lib/api";
-import CourseCard from "@/components/CourseCard";
-
-type Course = {
-  id: number;
-  title: string;
-  description: string;
-};
+import { Search, BookOpen } from "lucide-react";
+import { courseService } from "@/services/course.service";
+import { Course } from "@/types";
+import CourseCard from "@/components/cards/CourseCard";
+import Input from "@/components/ui/Input";
+import Spinner from "@/components/ui/Spinner";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const fetchCourses = async () => {
-    const url = search
-      ? `${API_URL}/courses?search=${search}`
-      : `${API_URL}/courses`;
-
-    const res = await fetch(url);
-    const data = await res.json();
-    setCourses(data);
+  const fetchCourses = async (q = "") => {
+    setLoading(true);
+    try {
+      const data = await courseService.getAll(q || undefined);
+      setCourses(data);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  
   useEffect(() => {
-    const fetchCourses = async () => {
-    const url = search
-      ? `${API_URL}/courses?search=${search}`
-      : `${API_URL}/courses`;
-
-    const res = await fetch(url);
-    const data = await res.json();
-    setCourses(data);
+    const fetchCourses = async (q = "") => {
+    setLoading(true);
+    try {
+      const data = await courseService.getAll(q || undefined);
+      setCourses(data);
+    } finally {
+      setLoading(false);
+    }
   };
-
     fetchCourses();
+  }, []);
+
+  useEffect(() => {
+    const delay = setTimeout(() => fetchCourses(search), 400);
+    return () => clearTimeout(delay);
   }, [search]);
 
-  const handleSearch = () => {
-    fetchCourses();
-  };
-
   return (
-    <div className="space-y-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <h1 className="text-4xl font-bold text-white tracking-tight">Explore Courses</h1>
-        
-        <div className="flex gap-3 w-full md:w-auto">
-          <div className="relative w-full md:w-80">
-            <input
-              type="text"
-              placeholder="Search courses..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-800 p-3 pl-4 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all text-white placeholder:text-zinc-500"
-            />
-          </div>
-          <button
-            onClick={handleSearch}
-            className="bg-blue-600 hover:bg-blue-500 text-white px-6 rounded-xl font-semibold transition-all shadow-lg shadow-blue-900/20"
-          >
-            Search
-          </button>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-zinc-100">All Courses</h1>
+        <p className="text-sm text-zinc-500 mt-1">
+          Browse and enroll in available courses
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {courses.map((course) => (
-          <CourseCard
-            key={course.id}
-            course={course}
-          />
-        ))}
+      {/* search */}
+      <div className="relative max-w-md">
+        <Search
+          size={16}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none"
+        />
+        <input
+          type="text"
+          placeholder="Search courses..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full bg-zinc-900 border border-zinc-700 rounded-lg pl-9 pr-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 transition-colors"
+        />
       </div>
-      
-      {courses.length === 0 && (
-        <div className="text-center py-20 border border-dashed border-zinc-800 rounded-3xl">
-          <p className="text-zinc-500 text-lg">No courses found matching your search.</p>
+
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <Spinner size="lg" />
+        </div>
+      ) : courses.length === 0 ? (
+        <EmptyState
+          icon={BookOpen}
+          title="No courses found"
+          description={
+            search
+              ? `No results for "${search}". Try a different search.`
+              : "No courses available yet."
+          }
+        />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {courses.map((course) => (
+            <CourseCard key={course.id} course={course} />
+          ))}
         </div>
       )}
     </div>
